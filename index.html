@@ -73,25 +73,20 @@
 <script>
 /* ============ EDIT THIS SECTION ============ */
 const CONFIG = {
-  businessName: "LaLaLamp",
+  businessName: "My Candle Store",
   tagline: "Add products to your cart and send your order to us on WhatsApp.",
   // Paste your published Google Sheet CSV link here (see setup steps).
   // Leave empty to show the sample products below.
-  sheetCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPTkoajsMDZ7tKflhf6h2f2oXD2bCkRTpt1bcYyGFDTaSmvV9hXkOJWmOEU2EfAzRTOWmxq963y-tz/pub?gid=120869365&single=true&output=csv",
+  sheetCsvUrl: "",
   whatsappNumber: "917887723281",   // orders from the cart are sent here (country code + number, no + or spaces)
   currency: "₹"
 };
 /* =========================================== */
 
 const SAMPLE_CSV = `name,price,category,description,image,in_stock
-Ceramic Coffee Mug,350,Kitchen,Handmade 300 ml mug with a matte glaze.,https://picsum.photos/seed/mug/600/450,yes
-Cotton Tote Bag,250,Bags,Sturdy canvas tote for daily use.,https://picsum.photos/seed/tote/600/450,yes
-Wooden Desk Organizer,899,Office,Keeps pens and notes in one place.,https://picsum.photos/seed/desk/600/450,yes
-Scented Soy Candle,499,Home,Slow-burning candle with a lavender scent.,https://picsum.photos/seed/candle/600/450,yes
-Steel Water Bottle,650,Kitchen,"Insulated 750 ml bottle, keeps drinks cold for 12 hours.",https://picsum.photos/seed/bottle/600/450,no
-Leather Wallet,1200,Accessories,Slim bifold wallet with card slots.,https://picsum.photos/seed/wallet/600/450,yes
-Notebook Set (3),420,Office,Three A5 ruled notebooks with soft covers.,https://picsum.photos/seed/notebook/600/450,yes
-Potted Succulent,300,Home,Low-maintenance plant in a clay pot.,https://picsum.photos/seed/plant/600/450,yes`;
+Watermelon Candle,299,Fruit Candles,Hand-poured watermelon-themed candle in a clear glass jar with hand-drawn seeds.,images/watermelon-candle.jpg,yes
+Heart Gel Candle,349,Gel Candles,Clear gel candle filled with lavender heart-shaped wax pieces.,images/heart-gel-candle.jpg,yes
+Blue Ocean Gel Candle,399,Gel Candles,Blue gel candle with a soft white wax top in a clear glass jar.,images/blue-gel-candle.jpg,yes`;
 
 let products = [];
 const $ = id => document.getElementById(id);
@@ -172,6 +167,11 @@ function drawCart(){
 }
 const toggle=o=>{$("drawer").classList.toggle("open",o);$("shade").classList.toggle("open",o)};
 $("openCart").onclick=()=>toggle(true);
+$("checkout").addEventListener("click",e=>{
+  if(!Object.keys(cart).length){e.preventDefault();return}
+  // WhatsApp opens with the order; then the cart resets
+  setTimeout(()=>{cart={};saveCart();toggle(false)},400);
+});
 $("closeCart").onclick=$("shade").onclick=()=>toggle(false);
 document.addEventListener("click",e=>{
   const t=e.target,d=t.dataset;

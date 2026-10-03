@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Products</title>
+<style>
+  :root{--bg:#f7f8f5;--ink:#1d2a24;--muted:#66736c;--line:#dfe4dd;--card:#fff;--accent:#1f6f54;--accent-ink:#fff;--out:#b4472f}
+  @media (prefers-color-scheme:dark){:root{--bg:#141a17;--ink:#e8eee9;--muted:#93a199;--line:#2a3430;--card:#1b2420;--accent:#4cc39a;--accent-ink:#0d1712;--out:#e58a74}}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  header{padding:32px 20px 8px;max-width:1100px;margin:0 auto}
+  h1{margin:0;font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:-.02em}
+  header p{margin:4px 0 0;color:var(--muted)}
+  .bar{max-width:1100px;margin:16px auto 0;padding:0 20px;display:flex;gap:10px;flex-wrap:wrap}
+  .bar input,.bar select{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+  .bar input{flex:1;min-width:200px}
+  .bar input:focus,.bar select:focus,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  main{max-width:1100px;margin:0 auto;padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+  .card img{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--line);display:block}
+  .body{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .cat{font-size:.8rem;color:var(--muted)}
+  .name{font-weight:650;font-size:1.05rem}
+  .desc{color:var(--muted);font-size:.92rem;flex:1}
+  .price{font-weight:700;font-size:1.1rem}
+  .btn{display:block;text-align:center;text-decoration:none;background:var(--accent);color:var(--accent-ink);padding:10px;border-radius:8px;font-weight:600;margin-top:6px}
+  .card.out img{opacity:.45}
+  .card.out .btn{background:var(--line);color:var(--muted);pointer-events:none}
+  .tag{color:var(--out);font-weight:600;font-size:.85rem}
+  button.btn{border:0;width:100%;font:inherit;font-weight:600;cursor:pointer}
+  .cartbtn{position:fixed;top:14px;right:14px;z-index:5;background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:10px 16px;font:inherit;font-weight:650;cursor:pointer}
+  .cartbtn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .shade{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;z-index:6}
+  .shade.open{display:block}
+  aside{position:fixed;top:0;right:0;bottom:0;width:min(380px,100%);background:var(--card);z-index:7;transform:translateX(100%);transition:transform .2s;display:flex;flex-direction:column;border-left:1px solid var(--line)}
+  aside.open{transform:none}
+  aside h2{margin:0;padding:16px;font-size:1.15rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  aside h2 button{background:none;border:0;color:var(--ink);font-size:1.5rem;cursor:pointer}
+  #items{flex:1;overflow:auto;padding:8px 16px}
+  .line{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .line img{width:56px;height:56px;object-fit:cover;border-radius:6px}
+  .line small{color:var(--muted)}
+  .qty{display:flex;align-items:center;gap:6px;margin-top:4px}
+  .qty button{width:26px;height:26px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;cursor:pointer}
+  .rm{background:none;border:0;color:var(--out);cursor:pointer;font:inherit;font-size:.85rem}
+  .foot{padding:16px;border-top:1px solid var(--line)}
+  .total{display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;margin-bottom:8px}
+  .msg{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 0}
+</style>
+</head>
+<body>
+<button class="cartbtn" id="openCart" aria-label="Open cart">Cart (<span id="count">0</span>)</button>
+<div class="shade" id="shade"></div>
+<aside id="drawer" aria-label="Cart">
+  <h2>Your cart <button id="closeCart" aria-label="Close cart">×</button></h2>
+  <div id="items"></div>
+  <div class="foot">
+    <div class="total"><span>Total</span><span id="total"></span></div>
+    <a class="btn" id="checkout" target="_blank" rel="noopener">Send order on WhatsApp</a>
+  </div>
+</aside>
+<header>
+  <h1 id="title"></h1>
+  <p id="tagline"></p>
+</header>
+<div class="bar">
+  <input id="q" type="search" placeholder="Search products" aria-label="Search products">
+  <select id="cat" aria-label="Filter by category"><option value="">All categories</option></select>
+</div>
+<main id="grid"><p class="msg">Loading products…</p></main>
+
+<script>
+/* ============ EDIT THIS SECTION ============ */
+const CONFIG = {
+  businessName: "My Store",
+  tagline: "Add products to your cart and send your order to us on WhatsApp.",
+  // Paste your published Google Sheet CSV link here (see setup steps).
+  // Leave empty to show the sample products below.
+  sheetCsvUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQPTkoajsMDZ7tKflhf6h2f2oXD2bCkRTpt1bcYyGFDTaSmvV9hXkOJWmOEU2EfAzRTOWmxq963y-tz/pub?gid=120869365&single=true&output=csv",
+  whatsappNumber: "917887723281",   // orders from the cart are sent here (country code + number, no + or spaces)
+  currency: "₹"
+};
+/* =========================================== */
+
+const SAMPLE_CSV = `name,price,category,description,image,in_stock
+Ceramic Coffee Mug,350,Kitchen,Handmade 300 ml mug with a matte glaze.,https://picsum.photos/seed/mug/600/450,yes
+Cotton Tote Bag,250,Bags,Sturdy canvas tote for daily use.,https://picsum.photos/seed/tote/600/450,yes
+Wooden Desk Organizer,899,Office,Keeps pens and notes in one place.,https://picsum.photos/seed/desk/600/450,yes
+Scented Soy Candle,499,Home,Slow-burning candle with a lavender scent.,https://picsum.photos/seed/candle/600/450,yes
+Steel Water Bottle,650,Kitchen,"Insulated 750 ml bottle, keeps drinks cold for 12 hours.",https://picsum.photos/seed/bottle/600/450,no
+Leather Wallet,1200,Accessories,Slim bifold wallet with card slots.,https://picsum.photos/seed/wallet/600/450,yes
+Notebook Set (3),420,Office,Three A5 ruled notebooks with soft covers.,https://picsum.photos/seed/notebook/600/450,yes
+Potted Succulent,300,Home,Low-maintenance plant in a clay pot.,https://picsum.photos/seed/plant/600/450,yes`;
+
+let products = [];
+const $ = id => document.getElementById(id);
+document.title = CONFIG.businessName;
+$("title").textContent = CONFIG.businessName;
+$("tagline").textContent = CONFIG.tagline;
+
+// Small CSV parser that handles quoted fields and commas inside quotes
+function parseCSV(text){
+  const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c=='"'){ if(text[i+1]=='"'){f+='"';i++} else q=false } else f+=c }
+    else if(c=='"') q=true;
+    else if(c==","){row.push(f);f=""}
+    else if(c=="\n"||c=="\r"){ if(c=="\r"&&text[i+1]=="\n")i++; row.push(f);f="";rows.push(row);row=[] }
+    else f+=c;
+  }
+  if(f||row.length){row.push(f);rows.push(row)}
+  const head=rows.shift().map(h=>h.trim().toLowerCase());
+  return rows.filter(r=>r.some(x=>x.trim())).map(r=>Object.fromEntries(head.map((h,i)=>[h,(r[i]||"").trim()])));
+}
+
+function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function render(){
+  const q=$("q").value.toLowerCase(), c=$("cat").value;
+  const list=products.filter(p=>(!c||p.category===c)&&(!q||(p.name+" "+p.description+" "+p.category).toLowerCase().includes(q)));
+  $("grid").innerHTML=list.length?list.map(p=>{const i=products.indexOf(p);
+    const out=/^(no|n|false|0|out)/i.test(p.in_stock||"");
+    return `<article class="card${out?" out":""}">
+      <img src="${esc(p.image||"")}" alt="${esc(p.name)}" loading="lazy">
+      <div class="body">
+        <span class="cat">${esc(p.category||"")}</span>
+        <span class="name">${esc(p.name)}</span>
+        <span class="desc">${esc(p.description||"")}</span>
+        <span class="price">${CONFIG.currency}${esc(p.price||"")}</span>
+        ${out?'<span class="tag">Out of stock</span>':""}
+        <button class="btn" data-add="${i}" ${out?"disabled":""}>${out?"Unavailable":"Add to cart"}</button>
+      </div></article>`}).join(""):'<p class="msg">No products match your search.</p>';
+}
+
+function setup(rows){
+  products=rows;
+  const cats=[...new Set(rows.map(p=>p.category).filter(Boolean))].sort();
+  $("cat").innerHTML='<option value="">All categories</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join("");
+  render();drawCart();
+}
+
+async function load(){
+  try{
+    if(!CONFIG.sheetCsvUrl){ setup(parseCSV(SAMPLE_CSV)); return; }
+    const r=await fetch(CONFIG.sheetCsvUrl); if(!r.ok) throw 0;
+    setup(parseCSV(await r.text()));
+  }catch(e){
+    $("grid").innerHTML='<p class="msg">Could not load products. Check that your Google Sheet is published as CSV and the link in CONFIG is correct.</p>';
+  }
+}
+
+let cart={}; // product name -> quantity
+try{cart=JSON.parse(localStorage.getItem("cart")||"{}")}catch(e){}
+const find=n=>products.find(p=>p.name===n);
+const num=v=>parseFloat(String(v).replace(/[^0-9.]/g,""))||0;
+function saveCart(){try{localStorage.setItem("cart",JSON.stringify(cart))}catch(e){} drawCart()}
+function drawCart(){
+  const names=Object.keys(cart).filter(n=>find(n));
+  let total=0,count=0,lines="";
+  names.forEach(n=>{const p=find(n),q=cart[n];total+=num(p.price)*q;count+=q;
+    lines+=`<div class="line"><img src="${esc(p.image||"")}" alt=""><div><strong>${esc(p.name)}</strong><br><small>${CONFIG.currency}${esc(p.price)}</small>
+    <div class="qty"><button data-dec="${esc(n)}" aria-label="Decrease">−</button><span>${q}</span><button data-inc="${esc(n)}" aria-label="Increase">+</button></div></div>
+    <button class="rm" data-rm="${esc(n)}">Remove</button></div>`});
+  $("items").innerHTML=lines||'<p class="msg">Your cart is empty.</p>';
+  $("count").textContent=count;
+  $("total").textContent=CONFIG.currency+total;
+  const text="Hi, I'd like to order:\n"+names.map(n=>`${cart[n]} x ${n} (${CONFIG.currency}${num(find(n).price)*cart[n]})`).join("\n")+`\nTotal: ${CONFIG.currency}${total}`;
+  $("checkout").href=count?`https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(text)}`:"#";
+  $("checkout").style.opacity=count?1:.5;
+}
+const toggle=o=>{$("drawer").classList.toggle("open",o);$("shade").classList.toggle("open",o)};
+$("openCart").onclick=()=>toggle(true);
+$("closeCart").onclick=$("shade").onclick=()=>toggle(false);
+document.addEventListener("click",e=>{
+  const t=e.target,d=t.dataset;
+  if(d.add!==undefined){const p=products[d.add];cart[p.name]=(cart[p.name]||0)+1;saveCart();t.textContent="Added ✓";setTimeout(()=>t.textContent="Add to cart",900)}
+  else if(d.inc){cart[d.inc]++;saveCart()}
+  else if(d.dec){if(--cart[d.dec]<=0)delete cart[d.dec];saveCart()}
+  else if(d.rm){delete cart[d.rm];saveCart()}
+});
+$("q").addEventListener("input",render);
+$("cat").addEventListener("change",render);
+load();
+</script>
+</body>
+</html>
